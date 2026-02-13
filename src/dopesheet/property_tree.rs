@@ -1,8 +1,8 @@
 //! Property tree panel for the DopeSheet.
 
+use crate::HashSet;
 use crate::traits::PropertyRow;
 use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Ui, Vec2};
-use crate::HashSet;
 
 /// Response from the property tree.
 #[derive(Default)]
@@ -113,7 +113,8 @@ impl<'a> PropertyTree<'a> {
 
             // Collapse arrow
             if row.can_collapse {
-                let arrow_rect = Rect::from_center_size(Pos2::new(x + 6.0, y_center), Vec2::splat(12.0));
+                let arrow_rect =
+                    Rect::from_center_size(Pos2::new(x + 6.0, y_center), Vec2::splat(12.0));
                 let arrow_response = ui.allocate_rect(arrow_rect, Sense::click());
 
                 if arrow_response.clicked() {
@@ -137,16 +138,19 @@ impl<'a> PropertyTree<'a> {
 
                 x += 16.0;
             } else {
-                x += 8.0; // Alignment space for leaves
+                // Alignment space for leaves.
+                x += 8.0;
             }
 
-            // Label
+            // Label.
             let label_color = if is_selected {
                 ui.visuals().selection.stroke.color
             } else if row.track_id.is_some() {
-                Color32::from_gray(200) // Leaf nodes
+                // Leaf nodes.
+                Color32::from_gray(200)
             } else {
-                Color32::from_gray(180) // Parent nodes
+                // Parent nodes.
+                Color32::from_gray(180)
             };
 
             painter.text(

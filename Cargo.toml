@@ -2,6 +2,7 @@
 name = "egui-keyframe"
 version = "0.1.0"
 edition = "2024"
+authors = ["virtualritz <virtualritz@protonmail.com>"]
 description = "Keyframe animation and curve editing widgets for egui"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/virtualritz/egui-keyframe"
@@ -17,10 +18,10 @@ frame-tick = ["dep:frame-tick"]
 [dependencies]
 egui = "0.33"
 uuid = { version = "1", features = ["v4"] }
-indexmap = "2.7"
+indexmap = "2"
 serde = { version = "1.0", features = ["derive"], optional = true }
-facet = { version = ">=0.40", optional = true }
-frame-tick = { version = "0.1", optional = true }
+facet = { version = ">=0.43", optional = true }
+frame-tick = { version = "0.3", optional = true }
 ahash = "0.8"
 
 [dev-dependencies]

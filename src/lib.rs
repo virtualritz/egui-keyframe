@@ -36,7 +36,7 @@ pub mod widgets;
 // Re-exports for convenience
 pub use core::{
     easing,
-    interpolation::{interpolate_at_position, CubicBezier, InterpolationTriple},
+    interpolation::{CubicBezier, InterpolationTriple, interpolate_at_position},
     keyframe::{BezierHandles, Keyframe, KeyframeId, KeyframeType},
     time::TimeTick,
     track::{Track, TrackId},

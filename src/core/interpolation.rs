@@ -362,11 +362,12 @@ mod tests {
         let keyframes: Vec<&Keyframe<f32>> = vec![&kf1, &kf2];
 
         let result = interpolate_at_position(&keyframes, 0.5).unwrap();
-        // Hold should have progression 0
+        // Hold should have progression 0.
         assert_eq!(result.progression, 0.0);
 
         let lerped = result.lerp();
-        assert_eq!(lerped, 10.0); // Should hold at left value
+        // Should hold at left value.
+        assert_eq!(lerped, 10.0);
     }
 
     #[test]

@@ -146,7 +146,7 @@ pub trait AnimationDataProvider {
 
     /// Get the bezier handles for a keyframe.
     fn keyframe_handles(&self, track_id: TrackId, keyframe_id: KeyframeId)
-        -> Option<BezierHandles>;
+    -> Option<BezierHandles>;
 
     /// Get the current time position.
     fn current_time(&self) -> TimeTick;

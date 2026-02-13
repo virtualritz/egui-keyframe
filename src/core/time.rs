@@ -15,7 +15,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "facet")]
 use facet::Facet;
 
-use std::ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{
+    Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
+};
 
 // =============================================================================
 // Inner type alias
@@ -605,7 +607,8 @@ mod tests {
     #[test]
     fn frame_conversion() {
         let t = TimeTick::from_frames(60.0, 30.0);
-        assert_eq!(t.value(), 2.0); // 60 frames at 30fps = 2 seconds
+        // 60 frames at 30fps = 2 seconds.
+        assert_eq!(t.value(), 2.0);
 
         let frames = t.to_frames(30.0);
         assert_eq!(frames, 60.0);

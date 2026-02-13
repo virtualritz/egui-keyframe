@@ -8,11 +8,11 @@ mod property_tree;
 mod selection;
 mod track_area;
 
+use crate::HashSet;
 use crate::core::keyframe::KeyframeId;
 use crate::traits::{AnimationDataProvider, PropertyRow};
 use crate::{SpaceTransform, TimeTick};
 use egui::{Color32, Rect, Response, Sense, Ui, Vec2};
-use crate::HashSet;
 
 pub use property_tree::PropertyTree;
 pub use selection::SelectionState;
@@ -172,7 +172,10 @@ impl<'a, P: AnimationDataProvider> DopeSheet<'a, P> {
         );
         let track_rect = Rect::from_min_size(
             tree_rect.right_top(),
-            Vec2::new(total_rect.width() - self.config.tree_width, total_rect.height()),
+            Vec2::new(
+                total_rect.width() - self.config.tree_width,
+                total_rect.height(),
+            ),
         );
 
         // Render property tree

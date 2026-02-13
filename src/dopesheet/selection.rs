@@ -1,7 +1,7 @@
 //! Selection state management for the DopeSheet.
 
-use crate::core::keyframe::KeyframeId;
 use crate::HashSet;
+use crate::core::keyframe::KeyframeId;
 
 /// Selection state for the DopeSheet.
 #[derive(Debug, Clone, Default)]
@@ -73,7 +73,11 @@ impl SelectionState {
     }
 
     /// Select multiple keyframes.
-    pub fn select_keyframes(&mut self, ids: impl IntoIterator<Item = KeyframeId>, add_to_selection: bool) {
+    pub fn select_keyframes(
+        &mut self,
+        ids: impl IntoIterator<Item = KeyframeId>,
+        add_to_selection: bool,
+    ) {
         if !add_to_selection {
             self.keyframes.clear();
         }

@@ -50,7 +50,11 @@ impl SpaceTransform {
     /// * `pixels_per_unit` - Zoom level (pixels per time unit)
     /// * `scroll_offset` - Pan offset in time units
     /// * `visible_width` - Width of the visible area in pixels
-    pub fn new(pixels_per_unit: f64, scroll_offset: impl Into<TimeTick>, visible_width: f32) -> Self {
+    pub fn new(
+        pixels_per_unit: f64,
+        scroll_offset: impl Into<TimeTick>,
+        visible_width: f32,
+    ) -> Self {
         Self {
             pixels_per_unit,
             scroll_offset: scroll_offset.into(),
@@ -208,18 +212,20 @@ mod tests {
         let (start, end) = transform.visible_range();
 
         assert_eq!(start, TimeTick::new(1.0));
-        assert!((end.value() - 3.0).abs() < 1e-10); // 1.0 + 200/100 = 3.0
+        // 1.0 + 200/100 = 3.0.
+        assert!((end.value() - 3.0).abs() < 1e-10);
     }
 
     #[test]
     fn zoom_at_center() {
         let transform = SpaceTransform::new(100.0, 0.0, 400.0);
-        let zoomed = transform.zoom_at(200.0, 2.0); // zoom in 2x at center
+        // Zoom in 2x at center.
+        let zoomed = transform.zoom_at(200.0, 2.0);
 
-        // After zoom, pixels_per_unit should double
+        // After zoom, pixels_per_unit should double.
         assert!((zoomed.pixels_per_unit - 200.0).abs() < 1e-10);
 
-        // The time at the zoom point should remain the same
+        // The time at the zoom point should remain the same.
         let time_before = transform.clipped_to_unit(200.0);
         let time_after = zoomed.clipped_to_unit(200.0);
         assert!((time_before - time_after).value().abs() < 1e-10);
@@ -228,9 +234,10 @@ mod tests {
     #[test]
     fn pan() {
         let transform = SpaceTransform::new(100.0, 0.0, 400.0);
-        let panned = transform.pan(-100.0); // pan right by 100 pixels
+        // Pan right by 100 pixels.
+        let panned = transform.pan(-100.0);
 
-        // Scroll should increase by 1 unit (100 pixels / 100 ppu)
+        // Scroll should increase by 1 unit (100 pixels / 100 ppu).
         assert!((panned.scroll_offset.value() - 1.0).abs() < 1e-10);
     }
 }

@@ -85,10 +85,11 @@ impl KeyframeDot {
 
     /// Check if a point is within the hit area.
     pub fn hit_test(&self, point: Pos2) -> bool {
-        let hit_size = self.size * 2.0; // Larger hit area
+        // Larger hit area for easier clicking.
+        let hit_size = self.size * 2.0;
         let dx = (point.x - self.pos.x).abs();
         let dy = (point.y - self.pos.y).abs();
-        // Diamond hit test: |x| + |y| <= size
+        // Diamond hit test: |x| + |y| <= size.
         dx + dy <= hit_size
     }
 }

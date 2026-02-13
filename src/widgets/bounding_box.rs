@@ -337,11 +337,12 @@ impl BoundingBox {
     fn draw_anchor(&self, painter: &Painter, center: Pos2) {
         let size = 5.0;
 
+        // Diamond shape: top, right, bottom, left.
         let points = vec![
-            Pos2::new(center.x, center.y - size),     // top
-            Pos2::new(center.x + size, center.y),     // right
-            Pos2::new(center.x, center.y + size),     // bottom
-            Pos2::new(center.x - size, center.y),     // left
+            Pos2::new(center.x, center.y - size),
+            Pos2::new(center.x + size, center.y),
+            Pos2::new(center.x, center.y + size),
+            Pos2::new(center.x - size, center.y),
         ];
 
         painter.add(egui::Shape::convex_polygon(

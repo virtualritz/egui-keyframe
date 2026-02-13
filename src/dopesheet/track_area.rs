@@ -4,9 +4,9 @@ use crate::core::keyframe::KeyframeId;
 use crate::traits::{AnimationDataProvider, PropertyRow};
 use crate::widgets::keyframe_dot::{AggregateKeyframeDot, KeyframeDot};
 use crate::widgets::time_ruler::draw_time_grid;
+use crate::{HashMap, HashSet};
 use crate::{SpaceTransform, TimeTick};
 use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
-use crate::{HashMap, HashSet};
 
 /// Response from the track area.
 #[derive(Default)]
@@ -79,11 +79,12 @@ impl<'a, P: AnimationDataProvider> TrackArea<'a, P> {
         // Background
         painter.rect_filled(rect, 0.0, self.background);
 
-        // Time grid
+        // Time grid.
         draw_time_grid(&painter, rect, self.space, Color32::from_gray(40), None);
 
-        // Render rows
-        let mut keyframe_positions: Vec<(KeyframeId, Pos2, usize)> = Vec::new(); // (id, pos, row_index)
+        // Render rows.
+        // Vec of (id, pos, row_index).
+        let mut keyframe_positions: Vec<(KeyframeId, Pos2, usize)> = Vec::new();
 
         for (i, row) in self.rows.iter().enumerate() {
             let row_rect = Rect::from_min_size(
@@ -129,8 +130,10 @@ impl<'a, P: AnimationDataProvider> TrackArea<'a, P> {
                     let x = self.space.unit_to_clipped(position);
                     if x >= rect.left() && x <= rect.right() {
                         let pos = Pos2::new(x, y_center);
-                        let all_selected = kf_ids.iter().all(|id| self.selected_keyframes.contains(id));
-                        let some_selected = kf_ids.iter().any(|id| self.selected_keyframes.contains(id));
+                        let all_selected =
+                            kf_ids.iter().all(|id| self.selected_keyframes.contains(id));
+                        let some_selected =
+                            kf_ids.iter().any(|id| self.selected_keyframes.contains(id));
 
                         let mut dot = AggregateKeyframeDot::new(pos, kf_ids.len());
                         dot.all_selected = all_selected;
@@ -198,23 +201,28 @@ impl<'a, P: AnimationDataProvider> TrackArea<'a, P> {
 
     /// Collect aggregate keyframes for a parent row.
     /// Returns a map from quantized time (milliseconds as i64) to keyframe IDs.
-    fn collect_aggregates(&self, parent_row: &PropertyRow, parent_index: usize) -> HashMap<i64, Vec<KeyframeId>> {
+    fn collect_aggregates(
+        &self,
+        parent_row: &PropertyRow,
+        parent_index: usize,
+    ) -> HashMap<i64, Vec<KeyframeId>> {
         let mut aggregates: HashMap<i64, Vec<KeyframeId>> = HashMap::new();
 
-        // Find all child rows
+        // Find all child rows.
         let parent_depth = parent_row.depth;
         for row in self.rows.iter().skip(parent_index + 1) {
             if row.depth <= parent_depth {
-                break; // No longer a child
+                // No longer a child.
+                break;
             }
 
-            if let Some(track_id) = row.track_id {
-                if let Some(positions) = self.provider.keyframe_positions(track_id) {
-                    for (kf_id, position) in positions {
-                        // Quantize to avoid floating point issues (millisecond precision)
-                        let quantized = (position.value() * 1000.0).round() as i64;
-                        aggregates.entry(quantized).or_default().push(kf_id);
-                    }
+            if let Some(track_id) = row.track_id
+                && let Some(positions) = self.provider.keyframe_positions(track_id)
+            {
+                for (kf_id, position) in positions {
+                    // Quantize to avoid floating point issues (millisecond precision)
+                    let quantized = (position.value() * 1000.0).round() as i64;
+                    aggregates.entry(quantized).or_default().push(kf_id);
                 }
             }
         }

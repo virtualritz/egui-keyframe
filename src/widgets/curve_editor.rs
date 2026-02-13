@@ -1,12 +1,12 @@
 //! Bezier curve editor widget for animation curves.
 
+use crate::HashSet;
 use crate::core::keyframe::{KeyframeId, KeyframeType};
 use crate::traits::{KeyframeSource, KeyframeView};
-use crate::widgets::bounding_box::{calculate_bounds, AnchorMode, BoundingBox, BoundingBoxHandle};
+use crate::widgets::bounding_box::{AnchorMode, BoundingBox, BoundingBoxHandle, calculate_bounds};
 use crate::widgets::keyframe_dot::KeyframeDot;
 use crate::{SpaceTransform, TimeTick};
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2};
-use crate::HashSet;
 
 /// Configuration for the curve editor.
 #[derive(Debug, Clone)]
@@ -268,27 +268,29 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
 
         // Draw bounding box if multiple keyframes selected
         let mut hovered_bbox_handle = None;
-        if selected_positions.len() > 1 {
-            if let Some(bounds) = calculate_bounds(&selected_positions) {
-                let anchor_pos = self.calculate_anchor_screen_pos(rect, &selected_keyframe_data);
+        if selected_positions.len() > 1
+            && let Some(bounds) = calculate_bounds(&selected_positions)
+        {
+            let anchor_pos = self.calculate_anchor_screen_pos(rect, &selected_keyframe_data);
 
-                let bbox_config = crate::widgets::bounding_box::BoundingBoxConfig {
-                    border_color: self.config.bounding_box_color,
-                    handle_color: Color32::WHITE,
-                    anchor_color: self.config.anchor_color,
-                    handle_size: self.config.bbox_handle_size,
-                    border_width: 1.0,
-                };
+            let bbox_config = crate::widgets::bounding_box::BoundingBoxConfig {
+                border_color: self.config.bounding_box_color,
+                handle_color: Color32::WHITE,
+                anchor_color: self.config.anchor_color,
+                handle_size: self.config.bbox_handle_size,
+                border_width: 1.0,
+            };
 
-                let bbox = BoundingBox::new(bounds).anchor(anchor_pos).config(bbox_config);
+            let bbox = BoundingBox::new(bounds)
+                .anchor(anchor_pos)
+                .config(bbox_config);
 
-                // Hit test for hover state
-                if let Some(pos) = pointer_pos {
-                    hovered_bbox_handle = bbox.hit_test(pos);
-                }
-
-                bbox.paint(&painter, hovered_bbox_handle);
+            // Hit test for hover state
+            if let Some(pos) = pointer_pos {
+                hovered_bbox_handle = bbox.hit_test(pos);
             }
+
+            bbox.paint(&painter, hovered_bbox_handle);
         }
 
         // Handle interactions
@@ -319,7 +321,8 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
 
         match self.anchor_mode {
             AnchorMode::Start => {
-                // First keyframe (earliest time)
+                // First keyframe (earliest time).
+                // SAFETY: selected_data is confirmed non-empty at function start.
                 let first = selected_data
                     .iter()
                     .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
@@ -330,7 +333,8 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
                 )
             }
             AnchorMode::End => {
-                // Last keyframe (latest time)
+                // Last keyframe (latest time).
+                // SAFETY: selected_data is confirmed non-empty at function start.
                 let last = selected_data
                     .iter()
                     .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
@@ -341,7 +345,8 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
                 )
             }
             AnchorMode::Center => {
-                // Center of bounds
+                // Center of bounds.
+                // SAFETY: selected_data is confirmed non-empty at function start.
                 let min_t = selected_data
                     .iter()
                     .map(|d| d.1)
@@ -372,10 +377,11 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
                 )
             }
             AnchorMode::Playhead => {
-                // Playhead position with interpolated value
+                // Playhead position with interpolated value.
                 let playhead_x = self.space.unit_to_clipped(self.current_time);
 
-                // Find approximate value at playhead by interpolation
+                // Find approximate value at playhead by interpolation.
+                // SAFETY: selected_data is confirmed non-empty at function start.
                 let min_v = selected_data
                     .iter()
                     .map(|d| d.2)
@@ -525,51 +531,51 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
         }
 
         // Draw left handle (if there's a previous keyframe)
-        if let Some(prev) = prev_kf {
-            if prev.connected_right {
-                let prev_pos = self.keyframe_to_screen(rect, prev);
-                let dx = kf_pos.x - prev_pos.x;
-                let dy = kf_pos.y - prev_pos.y;
+        if let Some(prev) = prev_kf
+            && prev.connected_right
+        {
+            let prev_pos = self.keyframe_to_screen(rect, prev);
+            let dx = kf_pos.x - prev_pos.x;
+            let dy = kf_pos.y - prev_pos.y;
 
-                let handle_pos = Pos2::new(
-                    prev_pos.x + dx * kf.handles.left_x,
-                    prev_pos.y + dy * kf.handles.left_y,
-                );
+            let handle_pos = Pos2::new(
+                prev_pos.x + dx * kf.handles.left_x,
+                prev_pos.y + dy * kf.handles.left_y,
+            );
 
-                // Handle line
-                painter.line_segment(
-                    [kf_pos, handle_pos],
-                    Stroke::new(1.0, self.config.handle_line_color),
-                );
+            // Handle line
+            painter.line_segment(
+                [kf_pos, handle_pos],
+                Stroke::new(1.0, self.config.handle_line_color),
+            );
 
-                // Handle circle
-                painter.circle_filled(handle_pos, 4.0, self.config.handle_color);
-                painter.circle_stroke(handle_pos, 4.0, Stroke::new(1.0, Color32::WHITE));
-            }
+            // Handle circle
+            painter.circle_filled(handle_pos, 4.0, self.config.handle_color);
+            painter.circle_stroke(handle_pos, 4.0, Stroke::new(1.0, Color32::WHITE));
         }
 
         // Draw right handle (if connected to next keyframe)
-        if let Some(next) = next_kf {
-            if kf.connected_right {
-                let next_pos = self.keyframe_to_screen(rect, next);
-                let dx = next_pos.x - kf_pos.x;
-                let dy = next_pos.y - kf_pos.y;
+        if let Some(next) = next_kf
+            && kf.connected_right
+        {
+            let next_pos = self.keyframe_to_screen(rect, next);
+            let dx = next_pos.x - kf_pos.x;
+            let dy = next_pos.y - kf_pos.y;
 
-                let handle_pos = Pos2::new(
-                    kf_pos.x + dx * kf.handles.right_x,
-                    kf_pos.y + dy * kf.handles.right_y,
-                );
+            let handle_pos = Pos2::new(
+                kf_pos.x + dx * kf.handles.right_x,
+                kf_pos.y + dy * kf.handles.right_y,
+            );
 
-                // Handle line
-                painter.line_segment(
-                    [kf_pos, handle_pos],
-                    Stroke::new(1.0, self.config.handle_line_color),
-                );
+            // Handle line
+            painter.line_segment(
+                [kf_pos, handle_pos],
+                Stroke::new(1.0, self.config.handle_line_color),
+            );
 
-                // Handle circle
-                painter.circle_filled(handle_pos, 4.0, self.config.handle_color);
-                painter.circle_stroke(handle_pos, 4.0, Stroke::new(1.0, Color32::WHITE));
-            }
+            // Handle circle
+            painter.circle_filled(handle_pos, 4.0, self.config.handle_color);
+            painter.circle_stroke(handle_pos, 4.0, Stroke::new(1.0, Color32::WHITE));
         }
     }
 
@@ -599,10 +605,10 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
             }
 
             // Delete key
-            if ui.input(|i| i.key_pressed(egui::Key::Delete)) {
-                if let Some(kf_id) = self.selected.iter().next().copied() {
-                    result.delete_keyframe = Some(kf_id);
-                }
+            if ui.input(|i| i.key_pressed(egui::Key::Delete))
+                && let Some(kf_id) = self.selected.iter().next().copied()
+            {
+                result.delete_keyframe = Some(kf_id);
             }
 
             // F key to fit view to all keyframes
@@ -615,11 +621,11 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
         if response.hovered() {
             // Ctrl+scroll or pinch gesture for zoom
             let zoom_delta = ui.input(|i| i.zoom_delta_2d());
-            if zoom_delta.x != 1.0 {
-                if let Some(pos) = response.hover_pos() {
-                    let center_time = self.space.clipped_to_unit(pos.x);
-                    result.zoom_horizontal = Some((zoom_delta.x, center_time));
-                }
+            if zoom_delta.x != 1.0
+                && let Some(pos) = response.hover_pos()
+            {
+                let center_time = self.space.clipped_to_unit(pos.x);
+                result.zoom_horizontal = Some((zoom_delta.x, center_time));
             }
             if zoom_delta.y != 1.0 {
                 result.zoom_vertical = Some(zoom_delta.y);
@@ -646,15 +652,16 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
                         result.zoom_horizontal = Some((zoom_factor, center_time));
                     }
                 } else {
-                    // Vertical drag -> vertical zoom (value axis)
+                    // Vertical drag -> vertical zoom (value axis).
                     let zoom_factor = (-drag_delta.y * zoom_speed).exp();
                     result.zoom_vertical = Some(zoom_factor);
                 }
-                return; // Don't process other drag interactions
+                // Don't process other drag interactions.
+                return;
             }
         }
 
-        // Middle-mouse drag or Alt+LMB drag for panning
+        // Middle-mouse drag or Alt+LMB drag for panning.
         let is_middle_drag = ui.input(|i| i.pointer.middle_down());
         let is_alt_drag = ui.input(|i| i.modifiers.alt) && response.dragged();
 
@@ -662,20 +669,22 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
             let drag_delta = ui.input(|i| i.pointer.delta());
             if drag_delta != Vec2::ZERO {
                 result.pan_delta = Some(drag_delta);
-                return; // Don't process other drag interactions
+                // Don't process other drag interactions.
+                return;
             }
         }
 
-        // Right-click on keyframe for context menu (only if not dragging)
-        if response.secondary_clicked() {
-            if let Some(kf_id) = hovered_keyframe {
-                // Store the keyframe ID for context menu
-                ui.memory_mut(|mem| mem.data.insert_temp(id.with("context_kf"), kf_id));
-            }
+        // Right-click on keyframe for context menu (only if not dragging).
+        if response.secondary_clicked()
+            && let Some(kf_id) = hovered_keyframe
+        {
+            // Store the keyframe ID for context menu
+            ui.memory_mut(|mem| mem.data.insert_temp(id.with("context_kf"), kf_id));
         }
 
         // Show context menu
-        let context_kf: Option<KeyframeId> = ui.memory(|mem| mem.data.get_temp(id.with("context_kf")));
+        let context_kf: Option<KeyframeId> =
+            ui.memory(|mem| mem.data.get_temp(id.with("context_kf")));
         if let Some(kf_id) = context_kf {
             // Find the keyframe to get its current type
             let current_type = keyframes
@@ -716,8 +725,9 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
                         }
 
                         // Close on click outside or Escape
-                        if ui.input(|i| i.key_pressed(egui::Key::Escape)) ||
-                           (ui.input(|i| i.pointer.any_click()) && !ui.ui_contains_pointer()) {
+                        if ui.input(|i| i.key_pressed(egui::Key::Escape))
+                            || (ui.input(|i| i.pointer.any_click()) && !ui.ui_contains_pointer())
+                        {
                             close_menu = true;
                         }
                     });
@@ -729,20 +739,20 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
         }
 
         // Double-click to add keyframe
-        if response.double_clicked() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                let time = self.space.clipped_to_unit(pos.x);
-                let value = self.y_to_value(rect, pos.y);
-                result.add_keyframe_at = Some((time, value));
-                return;
-            }
+        if response.double_clicked()
+            && let Some(pos) = response.interact_pointer_pos()
+        {
+            let time = self.space.clipped_to_unit(pos.x);
+            let value = self.y_to_value(rect, pos.y);
+            result.add_keyframe_at = Some((time, value));
+            return;
         }
 
         // Single click on keyframe to select
-        if response.clicked() {
-            if let Some(kf_id) = hovered_keyframe {
-                result.clicked_keyframe = Some(kf_id);
-            }
+        if response.clicked()
+            && let Some(kf_id) = hovered_keyframe
+        {
+            result.clicked_keyframe = Some(kf_id);
         }
 
         // Drag interactions
@@ -750,62 +760,63 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
             let drag_delta = response.drag_delta();
 
             // Bounding box drag handling (for multiple selected keyframes)
-            if selected_keyframe_data.len() > 1 {
-                if let Some(handle) = hovered_bbox_handle {
-                    match handle {
-                        BoundingBoxHandle::Interior => {
-                            // Offset all selected keyframes
-                            let delta_time = self.screen_delta_to_time(drag_delta.x);
-                            let delta_value = self.screen_delta_to_value(rect, drag_delta.y);
+            if selected_keyframe_data.len() > 1
+                && let Some(handle) = hovered_bbox_handle
+            {
+                match handle {
+                    BoundingBoxHandle::Interior => {
+                        // Offset all selected keyframes
+                        let delta_time = self.screen_delta_to_time(drag_delta.x);
+                        let delta_value = self.screen_delta_to_value(rect, drag_delta.y);
 
-                            // Constrain to axis if shift is held
-                            let (final_time, final_value) =
-                                if ui.input(|i| i.modifiers.shift) {
-                                    if drag_delta.x.abs() > drag_delta.y.abs() {
-                                        (delta_time, 0.0)
-                                    } else {
-                                        (TimeTick::default(), delta_value)
-                                    }
-                                } else {
-                                    (delta_time, delta_value)
-                                };
-
-                            result.offset_keyframes = Some((final_time, final_value));
-                        }
-                        _ => {
-                            // Scale operation for edge/corner handles
-                            if let Some(scale) = self.calculate_scale_from_drag(
-                                rect,
-                                handle,
-                                drag_delta,
-                                selected_keyframe_data,
-                            ) {
-                                result.scale_keyframes = Some(scale);
+                        // Constrain to axis if shift is held
+                        let (final_time, final_value) = if ui.input(|i| i.modifiers.shift) {
+                            if drag_delta.x.abs() > drag_delta.y.abs() {
+                                (delta_time, 0.0)
+                            } else {
+                                (TimeTick::default(), delta_value)
                             }
+                        } else {
+                            (delta_time, delta_value)
+                        };
+
+                        result.offset_keyframes = Some((final_time, final_value));
+                    }
+                    _ => {
+                        // Scale operation for edge/corner handles
+                        if let Some(scale) = self.calculate_scale_from_drag(
+                            rect,
+                            handle,
+                            drag_delta,
+                            selected_keyframe_data,
+                        ) {
+                            result.scale_keyframes = Some(scale);
                         }
                     }
-                    return;
                 }
+                return;
             }
 
             // Single keyframe drag
-            if let Some(kf_id) = hovered_keyframe {
-                if self.selected.contains(&kf_id) {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        let time = self.space.clipped_to_unit(pos.x);
-                        let value = self.y_to_value(rect, pos.y);
-                        result.keyframe_move = Some(KeyframeMove {
-                            keyframe_id: kf_id,
-                            new_position: time,
-                            new_value: value,
-                        });
-                    }
-                }
+            if let Some(kf_id) = hovered_keyframe
+                && self.selected.contains(&kf_id)
+                && let Some(pos) = response.interact_pointer_pos()
+            {
+                let time = self.space.clipped_to_unit(pos.x);
+                let value = self.y_to_value(rect, pos.y);
+                result.keyframe_move = Some(KeyframeMove {
+                    keyframe_id: kf_id,
+                    new_position: time,
+                    new_value: value,
+                });
             }
         }
 
         // Drag ended - signal for undo grouping
-        if response.drag_stopped() && selected_keyframe_data.len() > 1 && hovered_bbox_handle.is_some() {
+        if response.drag_stopped()
+            && selected_keyframe_data.len() > 1
+            && hovered_bbox_handle.is_some()
+        {
             result.transform_ended = true;
         }
     }
@@ -868,32 +879,37 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
             }
         };
 
-        // Convert drag delta to time/value space
+        // Convert drag delta to time/value space.
         let delta_time = self.screen_delta_to_time(drag_delta.x).value();
         let delta_value = self.screen_delta_to_value(rect, drag_delta.y);
 
-        // Calculate scale based on handle
+        // Calculate scale based on handle.
         let mut time_scale = 1.0;
         let mut value_scale = 1.0;
 
         if handle.scales_x() && time_range.abs() > 1e-6 {
-            // Scale factor based on how much the drag expanded/contracted the bounds
+            // Scale factor based on how much the drag expanded/contracted the bounds.
             let expansion = match handle {
-                BoundingBoxHandle::Left | BoundingBoxHandle::TopLeft | BoundingBoxHandle::BottomLeft => {
-                    -delta_time // Moving left edge left expands
-                }
-                _ => delta_time, // Moving right edge right expands
+                // Moving left edge left expands.
+                BoundingBoxHandle::Left
+                | BoundingBoxHandle::TopLeft
+                | BoundingBoxHandle::BottomLeft => -delta_time,
+                // Moving right edge right expands.
+                _ => delta_time,
             };
             time_scale = 1.0 + expansion / time_range;
-            time_scale = time_scale.max(0.01); // Prevent negative/zero scale
+            // Prevent negative/zero scale.
+            time_scale = time_scale.max(0.01);
         }
 
         if handle.scales_y() && value_range.abs() > 1e-6 {
             let expansion = match handle {
-                BoundingBoxHandle::Top | BoundingBoxHandle::TopLeft | BoundingBoxHandle::TopRight => {
-                    delta_value // Moving top edge up expands (note: delta_value is already negated for screen Y)
-                }
-                _ => -delta_value, // Moving bottom edge down expands
+                // Moving top edge up expands (delta_value is already negated for screen Y).
+                BoundingBoxHandle::Top
+                | BoundingBoxHandle::TopLeft
+                | BoundingBoxHandle::TopRight => delta_value,
+                // Moving bottom edge down expands.
+                _ => -delta_value,
             };
             value_scale = 1.0 + (expansion / value_range) as f64;
             value_scale = value_scale.max(0.01);

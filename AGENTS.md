@@ -62,6 +62,7 @@ cargo clippy --all-targets --all-features -- -W warnings
 ## Writing Instructions
 
 These instructions apply to any communication as well as any documentation you write:
+
 - Be concise.
 - Use simple sentences. Feel free to use technical jargon.
 - Do NOT overexplain basic concepts. Assume the user is technically proficient.
