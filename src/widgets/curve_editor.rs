@@ -167,7 +167,7 @@ impl<'a, S: KeyframeSource> CurveEditor<'a, S> {
     }
 
     /// Set a custom ID source.
-    pub fn id_source(mut self, id: impl std::hash::Hash) -> Self {
+    pub fn id_source(mut self, id: impl std::hash::Hash + std::fmt::Debug) -> Self {
         self.id_source = Some(egui::Id::new(id));
         self
     }
